@@ -10,7 +10,6 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import reactor.core.publisher.Mono;
 import org.springframework.core.io.buffer.DataBuffer;
 
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/")
 public class GatewayController {
@@ -47,24 +46,24 @@ public class GatewayController {
     // ✅ USER SERVICE
     @RequestMapping("/users/**")
     public Mono<ResponseEntity<byte[]>> routeUserService(ServerHttpRequest request) {
-        return forwardRequest(request, "http://localhost:8081", "/users");
+        return forwardRequest(request, "http://3.110.167.15:8081", "/users");
     }
 
     // ✅ QUESTION SERVICE
     @RequestMapping("/questions/**")
     public Mono<ResponseEntity<byte[]>> routeQuestionService(ServerHttpRequest request) {
-        return forwardRequest(request, "http://localhost:8082", "/questions");
+        return forwardRequest(request, "http://3.110.167.15:8082", "/questions");
     }
 
     // ✅ ANSWER SERVICE
     @RequestMapping("/answers/**")
     public Mono<ResponseEntity<byte[]>> routeAnswerService(ServerHttpRequest request) {
-        return forwardRequest(request, "http://localhost:8083", "/answers");
+        return forwardRequest(request, "http://3.110.167.15:8083", "/answers");
     }
 
     // ✅ NOTES SERVICE (FILE UPLOAD WILL WORK NOW)
     @RequestMapping("/notes/**")
     public Mono<ResponseEntity<byte[]>> routeNotesService(ServerHttpRequest request) {
-        return forwardRequest(request, "http://localhost:8084", "/notes");
+        return forwardRequest(request, "http://3.110.167.15:8084", "/notes");
     }
 }
