@@ -11,7 +11,7 @@ spring:
   cloud:
     gateway:
 
-      # ✅ CORS CONFIG (MAIN FIX)
+      # ✅ GLOBAL CORS CONFIG (CORRECT)
       globalcors:
         add-to-simple-url-handler-mapping: true
         corsConfigurations:
@@ -27,23 +27,33 @@ spring:
             allowedHeaders: "*"
             allowCredentials: true
 
-      # ✅ ROUTES
+      # ✅ ROUTES (FIXED)
       routes:
-        - id: user-service
+
+        # 🔥 USER SERVICE (FIXED)
+        - id: user-service-auth
           uri: http://3.110.167.15:8080
           predicates:
-            - Path=/auth/**,/users/**
+            - Path=/auth/**
 
+        - id: user-service-users
+          uri: http://3.110.167.15:8080
+          predicates:
+            - Path=/users/**
+
+        # 🔥 QUESTION SERVICE
         - id: question-service
           uri: http://3.110.167.15:8082
           predicates:
             - Path=/questions/**
 
+        # 🔥 ANSWER SERVICE
         - id: answer-service
           uri: http://3.110.167.15:8083
           predicates:
             - Path=/answers/**
 
+        # 🔥 NOTES SERVICE
         - id: notes-service
           uri: http://3.110.167.15:8084
           predicates:
