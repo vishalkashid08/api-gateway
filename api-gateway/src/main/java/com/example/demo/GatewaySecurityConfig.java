@@ -6,7 +6,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
@@ -15,7 +14,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.Arrays;
 import java.util.List;
-@CrossOrigin(origins = "*") 
+
 @Configuration
 @EnableWebFluxSecurity
 public class GatewaySecurityConfig {
@@ -28,7 +27,7 @@ public class GatewaySecurityConfig {
             .authorizeExchange(exchanges -> exchanges
                 .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .pathMatchers("/auth/**").permitAll()
-                .anyExchange().permitAll() 
+                .anyExchange().permitAll()
             )
             .build();
     }
@@ -36,9 +35,15 @@ public class GatewaySecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
-        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "Origin"));
+
+        // ✅ FIXED: allowedOriginPatterns("*") instead of allowedOrigins("localhost:5173")
+        // The old line blocked every browser request coming from the EC2 public IP.
+        // allowedOriginPatterns("*") works with allowCredentials=true and accepts any origin.
+        config.setAllowedOriginPatterns(Arrays.asList("*"));
+
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        config.setAllowedHeaders(Arrays.asList("*"));
+        config.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);
 
@@ -47,13 +52,14 @@ public class GatewaySecurityConfig {
         return source;
     }
 
-    // ✅ ADD THIS: Programmatic Header Deduplication
+    // Removes duplicate CORS headers that Spring Cloud Gateway + Spring Security
+    // can both add, which causes the browser to see two Allow-Origin values and reject the response.
     @Bean
     public GlobalFilter deduplicateCorsFilter() {
         return (exchange, chain) -> chain.filter(exchange).then(Mono.fromRunnable(() -> {
             exchange.getResponse().getHeaders().entrySet().forEach(entry -> {
                 String key = entry.getKey();
-                if (key.equalsIgnoreCase("Access-Control-Allow-Origin") || 
+                if (key.equalsIgnoreCase("Access-Control-Allow-Origin") ||
                     key.equalsIgnoreCase("Access-Control-Allow-Credentials")) {
                     if (entry.getValue().size() > 1) {
                         String firstValue = entry.getValue().get(0);
